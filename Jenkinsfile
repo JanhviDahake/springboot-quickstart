@@ -2,46 +2,56 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven 3.8.7' // Set this up in Jenkins → Global Tool Config
-        jdk 'Java 21'       // Set this in Jenkins → Global Tool Config
+        maven 'Maven 3.8.7'   // Use the Maven installed in Jenkins (name from Global Tool Config)
+        jdk 'JDK 21'          // Use Java 11 or your desired version
+    }
+
+    environment {
+        APP_NAME = 'springboot-quickstart'
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/JanhviDahake/springboot-quickstart.git'
+            }
+        }
+
         stage('Build') {
             steps {
-                echo 'Building the application...'
-                sh 'mvn clean install'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running unit tests...'
                 sh 'mvn test'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application...'
-                // Add your deploy logic here (e.g. copying JAR, running java -jar)
-                sh 'nohup java -jar target/*.jar &'
+                echo 'Deploying Spring Boot app...'
+                // Example: move to deployment folder, run jar, upload to S3, etc.
+                sh 'cp target/*.jar deploy/'
             }
         }
     }
 
     post {
         success {
+            echo '🎉 Build and deploy succeeded!'
             mail to: 'janhvidahake2001@gmail.com',
-                 subject: "SUCCESS: Build #${env.BUILD_NUMBER}",
-                 body: "Good job! Spring Boot build succeeded."
+                 subject: "Jenkins Build Success: ${APP_NAME}",
+                 body: "Build and deploy completed successfully."
         }
+
         failure {
+            echo '❌ Build failed.'
             mail to: 'janhvidahake2001@gmail.com',
-                 subject: "FAILURE: Build #${env.BUILD_NUMBER}",
-                 body: "Oops! The build failed."
+                 subject: "Jenkins Build Failed: ${APP_NAME}",
+                 body: "The build or tests failed. Please check Jenkins."
         }
     }
 }
-
 
