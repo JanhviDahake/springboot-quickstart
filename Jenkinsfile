@@ -1,40 +1,47 @@
 pipeline {
-  agent any
+    agent any
 
-  tools {
-    maven 'Maven 3.8.7'
-    jdk 'JDK 21'
-  }
+    tools {
+        maven 'Maven 3.8.7' // Set this up in Jenkins → Global Tool Config
+        jdk 'Java 21'       // Set this in Jenkins → Global Tool Config
+    }
 
-  stages {
-    stage('Build') {
-      steps {
-        sh 'mvn clean package -DskipTests'
-      }
-    }
-    stage('Test') {
-      steps {
-        sh 'mvn test'
-      }
-    }
-    stage('Deploy') {
-      steps {
-        echo 'Deploying to staging...'
-        sh 'cp target/*.jar /home/ubuntu/deploy/'
-      }
-    }
-  }
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+                sh 'mvn clean install'
+            }
+        }
 
-  post {
-    success {
-      mail to: 'janhvidahake2001@gmail.com',
-           subject: 'Build Success',
-           body: 'The Jenkins build succeeded.'
+        stage('Test') {
+            steps {
+                echo 'Running unit tests...'
+                sh 'mvn test'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying application...'
+                // Add your deploy logic here (e.g. copying JAR, running java -jar)
+                sh 'nohup java -jar target/*.jar &'
+            }
+        }
     }
-    failure {
-      mail to: 'janhvidahake2001@gmail.com',
-           subject: 'Build Failed',
-           body: 'The Jenkins build failed.'
+
+    post {
+        success {
+            mail to: 'janhvidahake2001@gmail.com',
+                 subject: "SUCCESS: Build #${env.BUILD_NUMBER}",
+                 body: "Good job! Spring Boot build succeeded."
+        }
+        failure {
+            mail to: 'janhvidahake2001@gmail.com',
+                 subject: "FAILURE: Build #${env.BUILD_NUMBER}",
+                 body: "Oops! The build failed."
+        }
     }
-  }
 }
+
+
